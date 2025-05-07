@@ -13,18 +13,19 @@ dotenv.config();
 const app = express();
 
 // 1. Configuración CORS para producción
-const PRODUCTION_FRONTEND = 'https://bookhive-frontend.onrender.com';
+const PRODUCTION_FRONTEND = 'https://backend-bookhive-10.onrender.com';
 
+// Puedes agregar más orígenes de frontend en producción si es necesario
 const corsOptions = {
-  origin: PRODUCTION_FRONTEND,
+  origin: [PRODUCTION_FRONTEND, 'https://fluffy-frangollo-a1d9cd.netlify.app'], // Permitir también el origen de Netlify
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204
+  credentials: true, // Permitir cookies en la comunicación
+  optionsSuccessStatus: 204, // Opcional, se usa para compatibilidad con algunos navegadores
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // Permitir las peticiones OPTIONS
 
 // 2. Middlewares optimizados
 app.use(express.json({ limit: '10mb' }));
@@ -34,8 +35,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
-    backend: 'https://backend-bookhive-ultimointento.onrender.com',
-    frontend: PRODUCTION_FRONTEND,
+    backend: 'https://backend-bookhive-ultimointento.onrender.com', // URL del backend
+    frontend: PRODUCTION_FRONTEND, // URL del frontend
     dbStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
     timestamp: new Date().toISOString()
   });
