@@ -14,7 +14,7 @@ const app = express();
 
 // 1. Configuración CORS para producción
 const PRODUCTION_FRONTEND = 'https://backend-bookhive-5.onrender.com';
-const NETLIFY_FRONTEND = 'https://dazzling-dasik-6c63ee.netlify.app'; // Agregar el frontend de Netlify
+const NETLIFY_FRONTEND = 'https://inquisitive-gelato-4c1095.netlify.app'; // Agregar el frontend de Netlify
 
 // Puedes agregar más orígenes de frontend en producción si es necesario
 const corsOptions = {
