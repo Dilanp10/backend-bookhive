@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import cors from 'cors';
+import cors from 'cors'; // Ya importado
 import dotenv from 'dotenv';
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from './routes/profile.routes.js';
@@ -13,14 +13,46 @@ dotenv.config();
 
 console.log("✅ El archivo server.js se está ejecutando");
 console.log("🔍 Leyendo variables de entorno...");
-const { PORT, MONGO_URI } = process.env;
+const { PORT, MONGO_URI, FRONTEND_URL } = process.env; // Añadí FRONTEND_URL
 console.log("📋 Variables de entorno cargadas:", {
   PORT: PORT ?? "NO DEFINIDO",
-  MONGO_URI: MONGO_URI ? (MONGO_URI.startsWith('mongodb+srv://') ? 'mongodb+srv://***' : 'mongodb://***') : "NO DEFINIDA"
+  MONGO_URI: MONGO_URI ? (MONGO_URI.startsWith('mongodb+srv://') ? 'mongodb+srv://*' : 'mongodb://*') : "NO DEFINIDA",
+  FRONTEND_URL: FRONTEND_URL ?? "NO DEFINIDA"
 });
 
 const app = express();
-app.use(cors());
+
+// ------------------------------------------------------------------
+// ⭐ INICIO: CONFIGURACIÓN CORS CORREGIDA
+//
+// Usamos FRONTEND_URL de las variables de entorno para mayor seguridad.
+// DEBES añadir una variable FRONTEND_URL en Render: 
+// FRONTEND_URL = https://radiant-monstera-2d8e15.netlify.app
+//
+const allowedOrigin = FRONTEND_URL || 'http://localhost:3000'; // Default local para desarrollo
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Permite la URL del frontend Y permite peticiones sin 'origin' (como apps móviles o cURL)
+        if (!origin || origin === allowedOrigin) {
+            callback(null, true);
+        } else {
+            // Muestra error de origen no permitido en la consola del servidor
+            console.error(❌ CORS: Origen no permitido: ${origin});
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Permite todos los métodos comunes
+    credentials: true, // Vital para enviar cookies o tokens
+    optionsSuccessStatus: 204 // Respuesta OK para preflight (OPTIONS)
+};
+
+// Reemplaza el simple 'app.use(cors());'
+app.use(cors(corsOptions));
+// ⭐ FIN: CONFIGURACIÓN CORS CORREGIDA
+// ------------------------------------------------------------------
+
+
 app.use(express.json());
 
 app.get('/test', (req, res) => {
@@ -50,8 +82,8 @@ mongoose.connect(MONGO_URI, connectOpts)
   .then(() => {
     console.log("📦 Conexión a MongoDB exitosa");
     const server = app.listen(PORT || 5000, () => {
-      console.log(`🚀 Servidor escuchando en puerto ${PORT || 5000}`);
-      console.log(`🔗 Prueba: http://localhost:${PORT || 5000}/test`);
+      console.log(🚀 Servidor escuchando en puerto ${PORT || 5000});
+      console.log(🔗 Prueba: http://localhost:${PORT || 5000}/test);
     });
 
     server.on('error', (err) => {
