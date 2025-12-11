@@ -12,7 +12,6 @@ import url from 'url';
 dotenv.config();
 
 console.log("✅ El archivo server.js se está ejecutando");
-// Se usa || para un valor por defecto si la variable no está en .env
 const { PORT, MONGO_URI, FRONTEND_URL } = process.env; 
 
 console.log("📋 Variables de entorno cargadas:", {
@@ -24,15 +23,19 @@ console.log("📋 Variables de entorno cargadas:", {
 const app = express();
 
 // ------------------------------------------------------------------
-// ⭐ INICIO: CONFIGURACIÓN CORS CORREGIDA Y SIMPLIFICADA
-// Esto soluciona el SyntaxError. DEBES tener la variable FRONTEND_URL en Render.
-// FRONTEND_URL = https://radiant-monstera-2d8e15.netlify.app
-
+// ⭐ INICIO: CONFIGURACIÓN CORS (VERSIÓN SIMPLE Y SEGURA)
+// 
+// Usamos FRONTEND_URL (https://radiant-monstera-2d8e15.netlify.app)
+// como el único origen permitido para evitar el error de sintaxis y el CORS.
+// 
 const allowedOrigin = FRONTEND_URL || 'http://localhost:5173'; 
 
 const corsOptions = {
+    // Permite solo el dominio del frontend o el local
     origin: allowedOrigin,
+    // Permite todos los métodos comunes
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    // Vital para enviar cookies o tokens
     credentials: true, 
     optionsSuccessStatus: 204
 };
@@ -40,7 +43,7 @@ const corsOptions = {
 // Aplica la configuración de CORS
 app.use(cors(corsOptions));
 
-// ⭐ FIN: CONFIGURACIÓN CORS CORREGIDA Y SIMPLIFICADA
+// ⭐ FIN: CONFIGURACIÓN CORS
 // ------------------------------------------------------------------
 
 
