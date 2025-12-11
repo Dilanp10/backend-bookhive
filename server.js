@@ -1,3 +1,4 @@
+// server.js (corregido)
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -24,28 +25,18 @@ const app = express();
 
 // ------------------------------------------------------------------
 // ⭐ INICIO: CONFIGURACIÓN CORS (VERSIÓN SIMPLE Y SEGURA)
-// 
-// Usamos FRONTEND_URL (https://radiant-monstera-2d8e15.netlify.app)
-// como el único origen permitido para evitar el error de sintaxis y el CORS.
-// 
 const allowedOrigin = FRONTEND_URL || 'http://localhost:5173'; 
 
 const corsOptions = {
-    // Permite solo el dominio del frontend o el local
     origin: allowedOrigin,
-    // Permite todos los métodos comunes
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    // Vital para enviar cookies o tokens
-    credentials: true, 
+    credentials: true,
     optionsSuccessStatus: 204
 };
 
-// Aplica la configuración de CORS
 app.use(cors(corsOptions));
-
 // ⭐ FIN: CONFIGURACIÓN CORS
 // ------------------------------------------------------------------
-
 
 app.use(express.json());
 
@@ -73,8 +64,9 @@ mongoose.connect(MONGO_URI, connectOpts)
   .then(() => {
     console.log("📦 Conexión a MongoDB exitosa");
     const server = app.listen(PORT || 5000, () => {
-      console.log(🚀 Servidor escuchando en puerto ${PORT || 5000});
-      console.log(🔗 Prueba: http://localhost:${PORT || 5000}/test);
+      // <-- aquí estaban los errores de sintaxis; ahora usamos template strings
+      console.log(`🚀 Servidor escuchando en puerto ${PORT || 5000}`);
+      console.log(`🔗 Prueba: http://localhost:${PORT || 5000}/test`);
     });
 
     server.on('error', (err) => {
