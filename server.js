@@ -1,4 +1,4 @@
-// server.js (con debug CORS temporal)
+// server.js (debug CORS + request logger)
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -30,6 +30,25 @@ console.log("📋 Variables de entorno cargadas:", {
 const app = express();
 
 // ------------------------
+// Global request logger (muy útil para debugging)
+// ------------------------
+app.use((req, res, next) => {
+  console.log('🔥 DEBUG REQUEST:');
+  console.log('  Método:', req.method);
+  console.log('  URL:', req.originalUrl);
+  console.log('  Origin:', req.headers.origin);
+  // imprimir headers con cuidado (puede ser verboso)
+  console.log('  Headers:', {
+    'content-type': req.headers['content-type'],
+    'origin': req.headers.origin,
+    'user-agent': req.headers['user-agent'],
+    'accept': req.headers.accept,
+    // si necesitás más, cámbialo por req.headers
+  });
+  next();
+});
+
+// ------------------------
 // Construcción whitelist CORS
 // ------------------------
 const allowedOrigins = new Set();
@@ -55,7 +74,7 @@ app.use((req, res, next) => {
     // Responder el origen real (más seguro que '*')
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  // Si querés permitir todo temporalmente (no recomendado):
+  // Si quieres permitir todo temporalmente (no recomendado):
   // res.setHeader('Access-Control-Allow-Origin', '*');
 
   res.setHeader('Access-Control-Allow-Credentials', 'true');
