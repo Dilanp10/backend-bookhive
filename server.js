@@ -1,4 +1,4 @@
-// server.js
+// server.js (con debug CORS temporal)
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -30,10 +30,8 @@ console.log("📋 Variables de entorno cargadas:", {
 const app = express();
 
 // ------------------------
-// CONFIGURACIÓN CORS (robusta)
+// Construcción whitelist CORS
 // ------------------------
-// Construimos la whitelist con FRONTEND_URL (si está configurada)
-// y algunos orígenes locales útiles para desarrollo.
 const allowedOrigins = new Set();
 if (FRONTEND_URL) allowedOrigins.add(FRONTEND_URL);
 allowedOrigins.add('http://localhost:5173'); // Vite dev
@@ -42,9 +40,44 @@ allowedOrigins.add('http://localhost:3001');
 
 console.log("🔐 Orígenes permitidos CORS:", Array.from(allowedOrigins));
 
+// ------------------------
+// DEBUG CORS - temporal (FORZAR cabeceras y responder preflight)
+// Este middleware se ejecuta antes de cualquier ruta y asegura que
+// las solicitudes OPTIONS reciban cabeceras Access-Control-* apropiadas.
+// Mantener solo temporalmente para diagnóstico; luego usar cors(corsOptions).
+// ------------------------
+app.use((req, res, next) => {
+  // Logging básico para ver qué llega
+  console.log(`[CORS DEBUG] ${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.has(origin)) {
+    // Responder el origen real (más seguro que '*')
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  // Si querés permitir todo temporalmente (no recomendado):
+  // res.setHeader('Access-Control-Allow-Origin', '*');
+
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    // Respondemos la preflight aquí y evitamos que llegue a otros handlers
+    return res.status(204).end();
+  }
+  next();
+});
+// ------------------------
+// FIN DEBUG CORS temporal
+// ------------------------
+
+// ------------------------
+// CONFIGURACIÓN CORS (robusta, usada además del parche temporal)
+// ------------------------
 const corsOptions = {
   origin: function (origin, callback) {
-    // origin === undefined cuando la request viene de herramientas tipo curl/postman o desde servidores.
+    // permitir requests sin origin (herramientas tipo curl/postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.has(origin)) return callback(null, true);
     console.warn(`⚠️ Intento CORS desde origen no permitido: ${origin}`);
@@ -56,15 +89,15 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Aplica CORS globalmente y permite respuestas a preflight OPTIONS
+// Aplica CORS globalmente también (redundante con el parche, pero correcto)
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // responde preflight para todas las rutas
 
 // ------------------------
 // Middlewares
 // ------------------------
-app.use(express.json()); // body parser para JSON
-app.use(express.urlencoded({ extended: true })); // por si envían form data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ------------------------
 // Rutas
@@ -85,7 +118,7 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ message: 'Endpoint API no encontrado' });
 });
 
-// Ruta catch-all (opcional) — evita que requieras frontend en backend
+// Ruta raíz
 app.get('/', (req, res) => {
   res.send('Backend BookHive funcionando');
 });
@@ -101,10 +134,8 @@ if (!MONGO_URI) {
 console.log("🔌 Intentando conectar a MongoDB...");
 
 const connectOpts = {
-  // opcionales: ajusta según necesidad
   serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  // Mongoose 8 ya maneja new URL parser / unified topology por defecto
 };
 
 mongoose.connect(MONGO_URI, connectOpts)
@@ -135,7 +166,6 @@ mongoose.connect(MONGO_URI, connectOpts)
   })
   .catch(err => {
     console.error("❌ Fallo en conexión a MongoDB:", err.message || err);
-    // si es un error DNS/SRV, muestra host sin credenciales para debugging
     if (err.code === 'ENOTFOUND' || /querySrv/i.test(err.message)) {
       try {
         const parsed = url.parse(MONGO_URI);
